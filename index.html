@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokéChef — Competitive Pokémon AI</title>
+
+    <link rel="stylesheet" href="/static/index.css">
+    <link rel="icon" type="image/svg+xml" href="/static/chef-hat.svg">
+    <script src="/static/theme.js"></script>
+    <script src="/static/chat-store.js" defer></script>
+    <script src="/static/app.js" defer></script>
+</head>
+<body>
+        <header>
+            <a class="brand" id="home-link" href="/" aria-label="PokéChef home — new chat">
+                <img class="brand-icon" src="/static/chef-hat.svg" alt="" width="44" height="44">
+                <div>
+                    <h1>PokéChef</h1>
+                </div>
+            </a>
+        <nav class="tabs" aria-label="Main navigation">
+            <button class="tab active" data-tab="chat">
+                AI Chat
+            </button>
+            <button class="tab" data-tab="review">
+                Team Review
+            </button>
+            <a class="compdex-link" href="https://edwinhuangofficial-blip.github.io/compdex/index.html?related=0" target="_blank" rel="noopener noreferrer" aria-label="CompDex (opens in a new tab)">CompDex <span aria-hidden="true">↗</span></a>
+        </nav>
+            <label class="theme-toggle">
+                <input id="theme-toggle" type="checkbox" role="switch" aria-label="Dark mode">
+                <span class="theme-track" aria-hidden="true">
+                    <span class="theme-thumb">
+                        <span class="theme-sun">🌤️</span>
+                        <span class="theme-moon">☾<span class="theme-stars">✦</span></span>
+                    </span>
+                </span>
+            </label>
+            <button id="settings-button" type="button" aria-label="Settings" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-.5 3-2 1.2-2.8-1.1-2 3.5 2.3 1.9v2.4l-2.3 1.9 2 3.5 2.8-1.1 2 1.2.5 3h4l.5-3 2-1.2 2.8 1.1 2-3.5-2.3-1.9v-2.4l2.3-1.9-2-3.5-2.8 1.1-2-1.2-.5-3Z"/><circle cx="11" cy="12" r="3"/></svg></button>
+        </header>
+    <dialog id="settings-dialog" aria-label="Settings">
+        <form method="dialog"><button class="settings-close" aria-label="Close settings">×</button></form>
+    </dialog>
+
+    <div class="workspace">
+        <aside class="chat-sidebar" aria-label="Saved chats">
+            <button id="new-chat" class="new-chat" type="button">＋ New chat</button>
+            <p class="sidebar-heading">YOUR CHATS</p>
+            <div id="chat-list"></div>
+            <p id="storage-notice" class="storage-notice" role="status">Chats are saved in this browser.</p>
+        </aside>
+    <main class="app">
+
+        <!-- AI CHAT -->
+        <section id="chat-panel" class="panel active">
+
+            <div id="messages" class="messages" aria-live="polite">
+            </div>
+
+            <form id="chat-form" class="input-row" autocomplete="off">
+                <input
+                    id="message-input"
+                    type="text"
+                    placeholder="Message PokéChef…"
+                    aria-label="Message PokéChef"
+                    autocomplete="off"
+                    maxlength="1000"
+                    required
+                >
+                <button id="send-button" type="submit" aria-label="Send message">
+                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 3-7 18-4-7-7-4 18-7Z"/><path d="m10 14 11-11"/></svg>
+                </button>
+            </form>
+            <p class="chat-disclaimer">PokéChef can make mistakes. Check important details.</p>
+
+        </section>
+
+        <!-- TEAM REVIEW -->
+        <section id="review-panel" class="panel">
+
+            <div class="section-heading">
+                <h2>Team Review</h2>
+                <p>
+                    Paste a Pokémon Showdown team.
+                    PokéChef will review your strategy,
+                    sets, and potential improvements.
+                </p>
+            </div>
+
+            <form id="review-form">
+
+                <label for="team-input">
+                    Pokémon Showdown Export
+                </label>
+
+                <textarea
+                    id="team-input"
+                    placeholder="Dragonite @ Heavy-Duty Boots&#10;Ability: Multiscale&#10;EVs: 252 Atk / 4 SpD / 252 Spe&#10;Adamant Nature&#10;- Dragon Dance&#10;- Extreme Speed&#10;- Earthquake&#10;- Roost"
+                    maxlength="12000"
+                    required
+                ></textarea>
+
+                <div class="action-row">
+                    <button type="button"
+                            id="example-button"
+                            class="secondary-button">
+                        Load Example
+                    </button>
+
+                    <button id="preview-button" type="submit">
+                        Preview import (free)
+                    </button>
+                </div>
+            </form>
+
+            <section id="review-results" class="results hidden">
+                <h3>Your Team</h3>
+                <div id="team-members" class="team-members"></div>
+                <p id="import-note"></p>
+                <ul id="import-warnings" aria-label="Import warnings"></ul>
+                <button id="review-button" type="button" disabled>Review Team with AI</button>
+                <p class="review-cost-note">Previewing is free. Requesting an AI review uses the API budget.</p>
+
+                <h3>PokéChef's Review</h3>
+                <div id="review-answer" class="review-answer"></div>
+
+                <div class="followup-section">
+                    <h3>Refine Your Strategy</h3>
+                    <p>
+                        Ask about replacements, movesets,
+                        weaknesses, or improvements.
+                    </p>
+
+                    <div id="followup-messages"
+                         class="followup-messages"
+                         aria-live="polite"></div>
+
+                    <form id="followup-form" class="input-row">
+                        <input
+                            id="followup-input"
+                            type="text"
+                            placeholder="What should I change first?"
+                            maxlength="1000"
+                            required
+                        >
+
+                        <button id="followup-button" type="submit">
+                            Ask
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+        </section>
+
+    </main>
+    </div>
+    <template id="chat-welcome-template">
+        <div class="chat-welcome">
+            <div class="welcome-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="currentColor"><path d="M9 22V14a6 6 0 0 1-1-12 9 9 0 0 1 16 0 6 6 0 0 1-1 12v8H9Zm0 2h14v5H9Z"/></svg></div>
+            <h2>Ask me anything Pokémon related!</h2>
+            <div class="welcome-cards">
+                <button type="button" class="welcome-card" data-action="review"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="7" r="3"/><path d="M4 20v-3a6 6 0 0 1 12 0v3M17 4a3 3 0 0 1 0 6m2 3a5 5 0 0 1 3 5"/></svg><span><strong>Review my team</strong><small>Paste a Showdown import</small></span></button>
+                <button type="button" class="welcome-card" data-prompt="Help me refine a moveset for "><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H5v20h14V7l-5-5Zm0 0v6h5M8 12h8m-8 4h5"/></svg><span><strong>Refine a moveset</strong><small>Find the right tools for the job</small></span></button>
+                <button type="button" class="welcome-card" data-prompt="Tell me about "><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="m15 15 7 7"/></svg><span><strong>Explore a Pokémon</strong><small>Discover stats, abilities, and more</small></span></button>
+            </div>
+        </div>
+    </template>
+</body>
+</html>
