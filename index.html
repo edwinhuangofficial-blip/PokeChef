@@ -6,20 +6,25 @@
     <title>PokéChef — Competitive Pokémon AI</title>
 
     <link rel="stylesheet" href="/static/index.css">
-    <link rel="icon" type="image/svg+xml" href="/static/chef-hat.svg">
+    <link rel="stylesheet" href="/static/workspace.css">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=3">
+    <link rel="stylesheet" href="/static/type-badges.css">
     <script src="/static/theme.js"></script>
     <script src="/static/chat-store.js" defer></script>
+    <script src="/static/showdown-import.js" defer></script>
     <script src="/static/app.js" defer></script>
+    <script src="/static/appearance.js" defer></script>
 </head>
 <body>
-        <header>
+        <header class="app-header">
+            <button id="sidebar-toggle" type="button" aria-label="Toggle sidebar" aria-expanded="false">☰</button>
             <a class="brand" id="home-link" href="/" aria-label="PokéChef home — new chat">
-                <img class="brand-icon" src="/static/chef-hat.svg" alt="" width="44" height="44">
+                <img class="brand-icon chef-logo" src="/static/pokechef-logo.svg" alt="" width="24" height="24">
                 <div>
                     <h1>PokéChef</h1>
                 </div>
             </a>
-        <nav class="tabs" aria-label="Main navigation">
+        <nav class="tabs header-tabs" aria-label="Main navigation">
             <button class="tab active" data-tab="chat">
                 AI Chat
             </button>
@@ -37,20 +42,44 @@
                     </span>
                 </span>
             </label>
-            <button id="settings-button" type="button" aria-label="Settings" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-.5 3-2 1.2-2.8-1.1-2 3.5 2.3 1.9v2.4l-2.3 1.9 2 3.5 2.8-1.1 2 1.2.5 3h4l.5-3 2-1.2 2.8 1.1 2-3.5-2.3-1.9v-2.4l2.3-1.9-2-3.5-2.8 1.1-2-1.2-.5-3Z"/><circle cx="11" cy="12" r="3"/></svg></button>
+            <button class="about-trigger" type="button" aria-label="About PokéChef" aria-haspopup="dialog">ⓘ</button>
         </header>
     <dialog id="settings-dialog" aria-label="Settings">
         <form method="dialog"><button class="settings-close" aria-label="Close settings">×</button></form>
+        <h2>Settings</h2>
+        <p class="dialog-description">A little more you. A little more Pokémon.</p>
+        <label for="art-style">Pokémon art style</label>
+        <select id="art-style"><option value="pixel">Pixel art</option><option value="artwork">Official artwork</option><option value="off">No background</option></select>
+        <p class="setting-help">Changes the background and imported team images. Saved in this browser.</p>
+        <button id="shuffle-background" type="button" class="secondary-button">↻ Shuffle Pokémon</button>
+        <hr>
+        <button class="about-trigger secondary-button" type="button">About PokéChef</button>
+    </dialog>
+    <dialog id="about-dialog" aria-labelledby="about-title">
+        <form method="dialog"><button class="settings-close" aria-label="Close about popup">×</button></form>
+        <img class="chef-logo" src="/static/pokechef-logo.svg" width="42" height="42" alt="">
+        <h2 id="about-title">Meet your competitive sous-chef.</h2>
+        <p>PokéChef is your AI-powered Pokémon assistant. Explore Pokémon and moves, understand type matchups, and import a Showdown team for practical feedback.</p>
+        <p>A sous-chef is a chef’s second-in-command. You build the team; PokéChef helps you refine the recipe.</p>
+        <p>We used a UI inspired by popular AI assistants like ChatGPT, with a Pokémon twist.</p>
+        <p class="setting-help">PokéChef is an independent project. AI advice can be wrong, and format legality is not verified. Pokémon artwork and sprites are provided through PokéAPI.</p>
+        <form method="dialog"><button class="about-start">Let’s cook</button></form>
     </dialog>
 
     <div class="workspace">
         <aside class="chat-sidebar" aria-label="Saved chats">
+            <a class="sidebar-brand" href="/" aria-label="PokéChef home"><img class="chef-logo" src="/static/pokechef-logo.svg" width="28" height="28" alt="">PokéChef</a>
             <button id="new-chat" class="new-chat" type="button">＋ New chat</button>
-            <p class="sidebar-heading">YOUR CHATS</p>
+            <button class="sidebar-review" type="button">▤ Review a team</button>
+            <a class="sidebar-dex" href="https://edwinhuangofficial-blip.github.io/compdex/index.html?related=0" target="_blank" rel="noopener noreferrer"><img src="/static/compdex-logo.svg" width="20" height="20" alt="">CompDex <svg class="external-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
+            <p class="sidebar-heading">Recent chats</p>
             <div id="chat-list"></div>
+            <div class="sidebar-bottom"><button id="settings-button" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-.5 3-2 1.2-2.8-1.1-2 3.5 2.3 1.9v2.4l-2.3 1.9 2 3.5 2.8-1.1 2 1.2.5 3h4l.5-3 2-1.2 2.8 1.1 2-3.5-2.3-1.9v-2.4l2.3-1.9-2-3.5-2.8 1.1-2-1.2-.5-3Z"/><circle cx="11" cy="12" r="3"/></svg>Settings</button>
             <p id="storage-notice" class="storage-notice" role="status">Chats are saved in this browser.</p>
+            </div>
         </aside>
     <main class="app">
+        <div id="pokemon-background" aria-hidden="true"></div>
 
         <!-- AI CHAT -->
         <section id="chat-panel" class="panel active">
@@ -62,15 +91,13 @@
                 <input
                     id="message-input"
                     type="text"
-                    placeholder="Message PokéChef…"
+                    placeholder="Ask anything about your team…"
                     aria-label="Message PokéChef"
                     autocomplete="off"
                     maxlength="1000"
                     required
                 >
-                <button id="send-button" type="submit" aria-label="Send message">
-                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 3-7 18-4-7-7-4 18-7Z"/><path d="m10 14 11-11"/></svg>
-                </button>
+                <div class="composer-tools"><button id="import-shortcut" type="button">＋ Import team</button><button id="matchup-shortcut" type="button">◇ Type matchups</button><button id="send-button" type="submit" aria-label="Send message"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></button></div>
             </form>
             <p class="chat-disclaimer">PokéChef can make mistakes. Check important details.</p>
 
@@ -78,52 +105,28 @@
 
         <!-- TEAM REVIEW -->
         <section id="review-panel" class="panel">
-
-            <div class="section-heading">
-                <h2>Team Review</h2>
-                <p>
-                    Paste a Pokémon Showdown team.
-                    PokéChef will review your strategy,
-                    sets, and potential improvements.
-                </p>
-            </div>
-
-            <form id="review-form">
-
-                <label for="team-input">
-                    Pokémon Showdown Export
-                </label>
-
-                <textarea
-                    id="team-input"
-                    placeholder="Dragonite @ Heavy-Duty Boots&#10;Ability: Multiscale&#10;EVs: 252 Atk / 4 SpD / 252 Spe&#10;Adamant Nature&#10;- Dragon Dance&#10;- Extreme Speed&#10;- Earthquake&#10;- Roost"
-                    maxlength="12000"
-                    required
-                ></textarea>
-
-                <div class="action-row">
-                    <button type="button"
-                            id="example-button"
-                            class="secondary-button">
-                        Load Example
-                    </button>
-
-                    <button id="preview-button" type="submit">
-                        Preview import (free)
-                    </button>
-                </div>
-            </form>
+            <div class="review-page-header"><div><p class="team-eyebrow">TEAM REVIEW</p><h2>Bring your team to the table.</h2><p class="dialog-description">Paste your Pokémon Showdown export, check your sets, then ask PokéChef for a review.</p></div><button id="back-to-chat" class="secondary-button" type="button">Back to chat</button></div>
+            <section id="import-page" aria-label="Import team">
+                <form id="review-form">
+                    <label for="team-input">Showdown export</label>
+                    <textarea id="team-input" placeholder="Dragonite @ Heavy-Duty Boots&#10;Ability: Multiscale&#10;- Dragon Dance&#10;- Extreme Speed" maxlength="12000" required></textarea>
+                    <p id="import-error" role="alert" class="hidden"></p>
+                    <div class="action-row"><button type="button" id="example-button" class="secondary-button">Load Example</button><div class="import-actions"><button id="cancel-import" class="secondary-button hidden" type="button">Cancel edit</button><button id="preview-button" type="submit">Import team</button></div></div>
+                    <p class="setting-help">Free and local. No AI request until you ask for a review.</p>
+                </form>
+            </section>
 
             <section id="review-results" class="results hidden">
-                <h3>Your Team</h3>
+                <div class="team-heading"><div><p class="team-eyebrow">THE RECIPE</p><h2 tabindex="-1" id="imported-team-title">Your team</h2><p id="team-count"></p></div><button id="edit-import" class="secondary-button" type="button">Edit import</button></div>
                 <div id="team-members" class="team-members"></div>
-                <p id="import-note"></p>
-                <ul id="import-warnings" aria-label="Import warnings"></ul>
+                <details class="import-details"><summary>Import notes <span id="warning-count"></span></summary><p id="import-note"></p><ul id="import-warnings" aria-label="Import warnings"></ul></details>
                 <button id="review-button" type="button" disabled>Review Team with AI</button>
                 <p class="review-cost-note">Previewing is free. Requesting an AI review uses the API budget.</p>
 
+                <div id="ai-review-section" class="hidden">
                 <h3>PokéChef's Review</h3>
                 <div id="review-answer" class="review-answer"></div>
+                </div>
 
                 <div class="followup-section">
                     <h3>Refine Your Strategy</h3>
@@ -156,14 +159,30 @@
 
     </main>
     </div>
+    <dialog id="rename-chat-dialog" class="chat-management-dialog" aria-labelledby="rename-chat-title">
+        <button type="button" class="dialog-close" data-close-chat-dialog aria-label="Close rename dialog">×</button>
+        <h2 id="rename-chat-title">Rename chat</h2>
+        <p class="dialog-description">Keep it short and recognizable</p>
+        <form id="rename-chat-form">
+            <label class="sr-only" for="chat-name-input">Chat name</label>
+            <input id="chat-name-input" name="title" maxlength="80" required autocomplete="off">
+            <div class="dialog-actions"><button type="button" class="dialog-cancel" data-close-chat-dialog>Cancel</button><button type="submit">Save</button></div>
+        </form>
+    </dialog>
+    <dialog id="delete-chat-dialog" class="chat-management-dialog" aria-labelledby="delete-chat-title" aria-describedby="delete-chat-description">
+        <button type="button" class="dialog-close" data-close-chat-dialog aria-label="Close delete dialog">×</button>
+        <h2 id="delete-chat-title">Delete chat?</h2>
+        <p id="delete-chat-description" class="dialog-description">This will permanently delete <span id="delete-chat-name"></span>. This can’t be undone.</p>
+        <form id="delete-chat-form"><div class="dialog-actions"><button type="button" class="dialog-cancel" data-close-chat-dialog autofocus>Cancel</button><button type="submit" class="dialog-delete">Delete chat</button></div></form>
+    </dialog>
     <template id="chat-welcome-template">
         <div class="chat-welcome">
-            <div class="welcome-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="currentColor"><path d="M9 22V14a6 6 0 0 1-1-12 9 9 0 0 1 16 0 6 6 0 0 1-1 12v8H9Zm0 2h14v5H9Z"/></svg></div>
-            <h2>Ask me anything Pokémon related!</h2>
+            <h2>What are we cooking?</h2>
+            <p>Better teams start with a good conversation.</p>
             <div class="welcome-cards">
-                <button type="button" class="welcome-card" data-action="review"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="7" r="3"/><path d="M4 20v-3a6 6 0 0 1 12 0v3M17 4a3 3 0 0 1 0 6m2 3a5 5 0 0 1 3 5"/></svg><span><strong>Review my team</strong><small>Paste a Showdown import</small></span></button>
-                <button type="button" class="welcome-card" data-prompt="Help me refine a moveset for "><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H5v20h14V7l-5-5Zm0 0v6h5M8 12h8m-8 4h5"/></svg><span><strong>Refine a moveset</strong><small>Find the right tools for the job</small></span></button>
-                <button type="button" class="welcome-card" data-prompt="Tell me about "><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="m15 15 7 7"/></svg><span><strong>Explore a Pokémon</strong><small>Discover stats, abilities, and more</small></span></button>
+                <button type="button" class="welcome-card" data-prompt="Help me refine a moveset for ">Refine a moveset</button>
+                <button type="button" class="welcome-card" data-prompt="Help me build around ">Build around a Pokémon</button>
+                <button type="button" class="welcome-card" data-action="review">Review my team <svg class="external-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></button>
             </div>
         </div>
     </template>

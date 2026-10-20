@@ -77,11 +77,11 @@ def parse_pokemon(block):
     if not species.strip() or item == "":
         raise ValueError("Pokémon name or held item is empty.")
     warnings = []
-    seen = set()
+    seen = {"Gender"} if gender else set()
 
     for line in lines[1:]:
         field = line.split(":", 1)[0] if ":" in line else ("Nature" if line.endswith(" Nature") else None)
-        if field in {"Ability", "Level", "Tera Type", "EVs", "IVs", "Nature"}:
+        if field in {"Ability", "Gender", "Level", "Tera Type", "EVs", "IVs", "Nature"}:
             if field in seen:
                 raise ValueError(f"{species}: duplicate {field} field.")
             seen.add(field)
@@ -89,6 +89,12 @@ def parse_pokemon(block):
                 raise ValueError(f"{species}: {field} is empty.")
         if line.startswith("Ability: "):
             pokemon["ability"] = line.removeprefix("Ability: ")
+
+        elif line.startswith("Gender: "):
+            value = line.removeprefix("Gender: ").strip()
+            if value not in {"M", "F", "N"}:
+                raise ValueError(f"{species}: gender must be M, F, or N.")
+            pokemon["gender"] = value
 
         elif line.startswith("Level: "):
             pokemon["level"] = int(line.removeprefix("Level: "))
